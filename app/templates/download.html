@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Download {{ file.filename }}{% endblock %}
+{% block title %}Скачать {{ file.filename }}{% endblock %}
 
 {% block content %}
 <style>
@@ -135,48 +135,48 @@
     <div class="share-header">
         <h1 class="share-title">
             <i class="fas fa-share-alt"></i>
-            <span>Share File</span>
+            <span>Поделиться файлом</span>
         </h1>
         <p class="file-meta-info">
-            <strong>File:</strong> {{ file.filename }} | 
-            <strong>Size:</strong> {{ "%.2f" | format(file.filesize / (1024*1024)) }} MB | 
-            <strong>Uploaded:</strong> {{ file.upload_date.split(' ')[0] }}
+            <strong>Файл:</strong> {{ file.filename }} | 
+            <strong>Размер:</strong> {{ "%.2f" | format(file.filesize / (1024*1024)) }} МБ | 
+            <strong>Загружен:</strong> {{ file.upload_date.split(' ')[0] }}
         </p>
     </div>
 
     <div class="link-generation-area">
-        <!-- Direct Link -->
+        <!-- Прямая ссылка -->
         <div class="link-group">
-            <label for="direct-link" class="link-label">Direct Link</label>
+            <label for="direct-link" class="link-label">Прямая ссылка</label>
             <div class="link-input-wrapper">
                 <input type="text" id="direct-link" class="link-input" value="{{ file.file_url }}" readonly>
                 <button class="copy-link-btn" data-clipboard-target="#direct-link">
                     <i class="fas fa-copy"></i>
-                    <span>Copy</span>
+                    <span>Копировать</span>
                 </button>
             </div>
         </div>
 
-        <!-- HTML Code -->
+        <!-- HTML-код -->
         <div class="link-group">
-            <label for="html-code" class="link-label">HTML</label>
+            <label for="html-code" class="link-label">HTML-код</label>
             <div class="link-input-wrapper">
                 <input type="text" id="html-code" class="link-input" value="{{ file.html_code }}" readonly>
                 <button class="copy-link-btn" data-clipboard-target="#html-code">
                     <i class="fas fa-copy"></i>
-                    <span>Copy</span>
+                    <span>Копировать</span>
                 </button>
             </div>
         </div>
 
-        <!-- Markdown Code -->
+        <!-- Markdown-код -->
         <div class="link-group">
             <label for="markdown-code" class="link-label">Markdown</label>
             <div class="link-input-wrapper">
                 <input type="text" id="markdown-code" class="link-input" value="{{ file.markdown_code }}" readonly>
                 <button class="copy-link-btn" data-clipboard-target="#markdown-code">
                     <i class="fas fa-copy"></i>
-                    <span>Copy</span>
+                    <span>Копировать</span>
                 </button>
             </div>
         </div>
@@ -184,7 +184,7 @@
 
     <div class="download-button-container">
         <a href="{{ file.file_url }}" class="download-btn-large" download>
-            <i class="fas fa-download"></i> Download File
+            <i class="fas fa-download"></i> Скачать файл
         </a>
     </div>
 </div>
@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     clipboard.on('success', function(e) {
         const originalText = e.trigger.innerHTML;
-        e.trigger.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        e.trigger.innerHTML = '<i class="fas fa-check"></i> Скопировано!';
         e.trigger.classList.add('copied');
         
         setTimeout(function() {
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function () {
     clipboard.on('error', function(e) {
         console.error('Action:', e.action);
         console.error('Trigger:', e.trigger);
-        alert('Failed to copy. Please copy manually.');
+        alert('Не удалось скопировать. Пожалуйста, скопируйте вручную.');
     });
 });
 </script>

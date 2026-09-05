@@ -61,7 +61,8 @@ class TelegramSyncService:
         if not self.client:
             return False
 
-        self.channel_entity = await self.client.get_entity(self.settings.CHANNEL_NAME)
+        target_channel = int(self.settings.CHANNEL_NAME) if self.settings.CHANNEL_NAME.lstrip('-').isdigit() else self.settings.CHANNEL_NAME
+        self.channel_entity = await self.client.get_entity(target_channel)
         self.client.add_event_handler(
             self._handle_message_deleted,
             events.MessageDeleted(chats=self.channel_entity)
@@ -71,13 +72,13 @@ class TelegramSyncService:
         self._reconcile_task = asyncio.create_task(self._reconcile_loop())
         if self.settings.TELEGRAM_SYNC_SESSION_STRING:
             print(
-                f"Telegram 同步服务已启动，运行模式: {self._session_mode}，"
-                f"启动时历史回填新增 {history_added} 条记录。"
+                f"Служба синхронизации Telegram запущенa, режим работы: {self._session_mode}，"
+                f"при старте из истории добавлено {history_added} записей."
             )
         else:
             print(
-                f"Telegram 同步服务已启动，运行模式: {self._session_mode}。"
-                "未配置 TELEGRAM_SYNC_SESSION_STRING，已跳过启动时历史回填。"
+                f"Служба синхронизации Telegram запущенa, режим работы: {self._session_mode}。"
+                "TELEGRAM_SYNC_SESSION_STRING не настроена, заполнение истории при старте пропущено."
             )
         return True
 
@@ -113,7 +114,7 @@ class TelegramSyncService:
         )
         await bot_client.start(bot_token=self.settings.BOT_TOKEN)
         self._session_mode = "bot_token"
-        print("Telegram 同步服务已切换到 Bot 会话。")
+        print("Служба синхронизации Telegram переключена на сессию бота.")
         return bot_client
 
     async def _bootstrap_history_once(self) -> int:
@@ -155,10 +156,10 @@ class TelegramSyncService:
                 return 0
 
             self.client = bootstrap_client
-            self.channel_entity = await bootstrap_client.get_entity(self.settings.CHANNEL_NAME)
+            self.channel_entity = await bootstrap_client.get_entity(int(self.settings.CHANNEL_NAME) if self.settings.CHANNEL_NAME.lstrip("-").isdigit() else self.settings.CHANNEL_NAME)
             history_added = await self.sync_history_once()
             await self.reconcile_once()
-            print("Telegram 启动回填已完成，准备切换回 Bot 会话。")
+            print("Синхронизация при старте завершена, переключение на сессию бота...")
             return history_added
         except Exception as exc:
             print(f"Telegram 启动回填失败: {exc}")
@@ -215,7 +216,7 @@ class TelegramSyncService:
             })
 
         if removed_file_ids:
-            print(f"Telegram 删除对账完成，本轮同步删除 {len(removed_file_ids)} 条记录。")
+            print(f"Синхронизация удалений Telegram завершена, в этом цикле удалено {len(removed_file_ids)} записей.")
         return len(removed_file_ids)
 
     async def sync_history_once(self) -> int:
@@ -267,9 +268,9 @@ class TelegramSyncService:
                 existing_file_ids.add(file_id)
 
         if inserted_count:
-            print(f"Telegram 历史回填完成，新增 {inserted_count} 条文件记录。")
+            print(f"Синхронизация истории Telegram завершена, добавлено {inserted_count} записей о файлах.")
         else:
-            print("Telegram 历史回填完成，本轮没有新增文件记录。")
+            print("Синхронизация истории Telegram завершена, новых файлов не обнаружено.")
         return inserted_count
 
     async def _build_history_record(
@@ -402,7 +403,7 @@ class TelegramSyncService:
                 chunk_message = message_map.get(chunk_id)
                 chunk_size = self._extract_message_size(chunk_message)
                 if chunk_size is None:
-                    print(f"警告: 无法解析分块消息 {chunk_id} 的文件大小。")
+                    print(f"警告: 无法解析分块消息 {chunk_id} 的Размер файла。")
                     continue
                 total_size += chunk_size
 

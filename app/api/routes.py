@@ -55,7 +55,7 @@ def _ensure_request_authorized(
     submitted_key: str | None = None,
     submitted_password: str | None = None,
 ) -> None:
-    """统一处理网页端与 API 端的鉴权逻辑。"""
+    """Единая логика авторизации для веб-интерфейса и API."""
     picgo_api_key = settings.PICGO_API_KEY
     active_password = get_active_password()
     session_password = request.cookies.get("password")
@@ -72,7 +72,7 @@ def _ensure_request_authorized(
     if _credentials_match(picgo_api_key, submitted_key):
         return
 
-    error_detail = "无效的 API 密钥" if picgo_api_key else "需要网页登录"
+    error_detail = "Недействительный ключ API" if picgo_api_key else "Требуется авторизация"
     raise HTTPException(status_code=401, detail=error_detail)
 
 
@@ -90,7 +90,7 @@ def _serialize_file(file_info: dict[str, Any], settings: Settings) -> dict[str, 
 
 
 def _extract_delete_targets(payload: Any, settings: Settings) -> list[str]:
-    """尽量从不同格式的 PicList 请求体中提取 file_id。"""
+    """Извлекает file_id из различных форматов запросов PicList."""
     collected: list[str] = []
 
     def visit(value: Any) -> None:
@@ -133,7 +133,7 @@ async def _delete_file_and_sync(
     file_id: str,
     telegram_service: TelegramService,
 ) -> dict[str, Any]:
-    """删除 Telegram 主消息后，同步清理数据库并广播删除事件。"""
+    """Удаляет главное сообщение в Telegram, очищает БД и рассылает событие удаления."""
     delete_result = await telegram_service.delete_file_with_chunks(file_id)
     delete_result["file_id"] = file_id
     error_text = " ".join(
@@ -161,14 +161,14 @@ async def _delete_file_and_sync(
             }
         )
 
-        message = f"文件 {file_id} 已删除。"
+        message = f"Файл {file_id} успешно удалён."
         if delete_result.get("status") == "partial_failure":
             message = (
-                f"文件 {file_id} 已从前端列表移除，"
-                f"但仍有 {len(delete_result.get('failed_chunks', []))} 个分块删除失败。"
+                f"Файл {file_id} удалён из списка веб-интерфейса, "
+                f"но {len(delete_result.get('failed_chunks', []))} чанков не удалось удалить."
             )
         elif is_not_found_error:
-            message = f"文件 {file_id} 在 Telegram 中未找到，已按删除状态完成同步。"
+            message = f"Файл {file_id} не найден в Telegram, синхронизация удаления завершена."
 
         return {
             "status": "ok",
@@ -182,7 +182,7 @@ async def _delete_file_and_sync(
             status_code=500,
             detail={
                 "file_id": file_id,
-                "message": f"文件 {file_id} 删除部分失败。",
+                "message": f"Ошибка частичного удаления файла {file_id}.",
                 "details": delete_result,
             },
         )
@@ -191,7 +191,7 @@ async def _delete_file_and_sync(
         status_code=400,
         detail={
             "file_id": file_id,
-            "message": f"删除文件 {file_id} 时出错。",
+            "message": f"Ошибка при удалении файла {file_id}.",
             "details": delete_result,
         },
     )
@@ -206,7 +206,7 @@ async def upload_file(
     telegram_service: TelegramService = Depends(get_telegram_service),
     x_api_key: Optional[str] = Header(None),
 ):
-    """处理网页与 PicList 的上传请求。"""
+    """Обрабатывает запросы на загрузку файлов из веб-интерфейса и PicList."""
     submitted_key = x_api_key or key
     _ensure_request_authorized(request, settings, submitted_key)
 
@@ -224,7 +224,7 @@ async def upload_file(
             os.unlink(temp_file_path)
 
     if not file_id:
-        raise HTTPException(status_code=500, detail="文件上传失败。")
+        raise HTTPException(status_code=500, detail="Ошибка загрузки файла.")
 
     file_info = await asyncio.to_thread(database.get_file_info, file_id)
     if file_info:
@@ -264,7 +264,7 @@ async def download_file(
     telegram_service: TelegramService = Depends(get_telegram_service),
     client: httpx.AsyncClient = Depends(get_http_client),
 ):
-    """处理单文件与清单文件的下载。"""
+    """Обрабатывает скачивание одиночных файлов и файлов с манифестом чанков."""
     try:
         _, real_file_id = file_id.split(':', 1)
     except ValueError:
@@ -272,7 +272,7 @@ async def download_file(
 
     download_url = await telegram_service.get_download_url(real_file_id)
     if not download_url:
-        raise HTTPException(status_code=404, detail="文件未找到或下载链接已过期。")
+        raise HTTPException(status_code=404, detail="Файл не найден или ссылка на скачивание истекла.")
 
     try:
         head_resp = await client.get(download_url, headers={"Range": "bytes=0-127"})
@@ -288,16 +288,16 @@ async def download_file(
         else:
             manifest_content = None
     except httpx.HTTPError as exc:
-        raise HTTPException(status_code=503, detail="无法从 Telegram 获取文件。") from exc
+        raise HTTPException(status_code=503, detail="Не удалось получить файл из Telegram.") from exc
 
     if manifest_content is not None:
         try:
             lines = manifest_content.decode('utf-8').strip().split('\n')
         except (httpx.HTTPError, UnicodeDecodeError) as exc:
-            raise HTTPException(status_code=503, detail="无法读取文件清单。") from exc
+            raise HTTPException(status_code=503, detail="Не удалось прочитать манифест файла.") from exc
 
         if len(lines) < 2:
-            raise HTTPException(status_code=502, detail="文件清单格式无效。")
+            raise HTTPException(status_code=502, detail="Неверный формат манифеста файла.")
 
         original_filename = lines[1]
         chunk_file_ids = lines[2:]
@@ -340,14 +340,14 @@ async def download_file(
 
 @router.get("/api/file-updates")
 async def file_updates(request: Request):
-    """向所有前端页面广播文件新增和删除事件。"""
+    """Рассылает события добавления и удаления файлов на клиенты через SSE."""
     subscriber_queue = await subscribe_file_updates()
 
     async def event_generator():
         try:
             while True:
                 if await request.is_disconnected():
-                    print("客户端已断开连接，停止推送。")
+                    print("Клиент отключился, отправка событий остановлена.")
                     break
 
                 try:
@@ -356,7 +356,7 @@ async def file_updates(request: Request):
                 except asyncio.TimeoutError:
                     continue
                 except Exception as exc:
-                    print(f"推送事件时出错: {exc}")
+                    print(f"Ошибка при отправке события SSE: {exc}")
         finally:
             await unsubscribe_file_updates(subscriber_queue)
 
@@ -369,7 +369,7 @@ async def get_files_list(
     page_size: int = 50,
     settings: Settings = Depends(get_settings),
 ):
-    """分页读取数据库文件列表。"""
+    """Возвращает постраничный список файлов из базы данных."""
     page = max(page, 1)
     page_size = min(max(page_size, 1), 100)
     files, total = await asyncio.gather(
@@ -393,7 +393,7 @@ async def delete_file(
     telegram_service: TelegramService = Depends(get_telegram_service),
     x_api_key: Optional[str] = Header(None),
 ):
-    """删除单个文件，并同步前端与 Telegram 侧状态。"""
+    """Удаляет одиночный файл и синхронизирует состояние веб-интерфейса и Telegram."""
     _ensure_request_authorized(request, settings, x_api_key or key)
     return await _delete_file_and_sync(file_id, telegram_service)
 
@@ -407,7 +407,7 @@ async def delete_files_for_piclist(
     telegram_service: TelegramService = Depends(get_telegram_service),
     x_api_key: Optional[str] = Header(None),
 ):
-    """兼容 PicList 脚本或自定义请求的删除入口。"""
+    """Точка входа для удаления файлов через PicList или пользовательские запросы."""
     key = None
     if isinstance(payload, dict):
         key = payload.get("key")
@@ -415,7 +415,7 @@ async def delete_files_for_piclist(
     _ensure_request_authorized(request, settings, x_api_key or key)
     file_ids = _extract_delete_targets(payload, settings)
     if not file_ids:
-        raise HTTPException(status_code=400, detail="请求体中未解析到可删除的 file_id。")
+        raise HTTPException(status_code=400, detail="В теле запроса не найден пригодный file_id.")
 
     deleted = []
     failed = []
@@ -439,7 +439,7 @@ async def set_password(
     settings: Settings = Depends(get_settings),
     x_api_key: Optional[str] = Header(None),
 ):
-    """设置或更新应用程序密码。"""
+    """Устанавливает или обновляет пароль доступа к приложению."""
     _ensure_request_authorized(
         request,
         settings,
@@ -448,7 +448,7 @@ async def set_password(
     )
     password = payload.password.strip()
     if not password:
-        raise HTTPException(status_code=400, detail="密码不能为空。")
+        raise HTTPException(status_code=400, detail="Пароль не может быть пустым.")
 
     try:
         with open(".password", "w", encoding="utf-8") as file:
@@ -456,10 +456,10 @@ async def set_password(
 
         return JSONResponse(
             status_code=200,
-            content={"status": "ok", "message": "密码已成功设置。"},
+            content={"status": "ok", "message": "Пароль успешно установлен."},
         )
     except OSError as exc:
-        raise HTTPException(status_code=500, detail="无法写入密码文件。") from exc
+        raise HTTPException(status_code=500, detail="Не удалось записать файл пароля.") from exc
 
 
 @router.post("/api/batch_delete")
@@ -471,7 +471,7 @@ async def batch_delete_files(
     telegram_service: TelegramService = Depends(get_telegram_service),
     x_api_key: Optional[str] = Header(None),
 ):
-    """批量删除文件。"""
+    """Пакетное удаление файлов."""
     _ensure_request_authorized(request, settings, x_api_key or key)
 
     successful_deletions = []
@@ -494,14 +494,14 @@ async def stream_chunks(
     telegram_service: TelegramService,
     client: httpx.AsyncClient,
 ):
-    """流式输出分块文件，并预取下一个分块的临时 URL。"""
+    """Потоковая передача чанков с предварительным получением ссылки на следующий чанк."""
     actual_chunk_ids: list[tuple[str, str]] = []
     for chunk_id in chunk_composite_ids:
         try:
             _, actual_chunk_id = chunk_id.split(':', 1)
             actual_chunk_ids.append((chunk_id, actual_chunk_id))
         except (ValueError, IndexError):
-            print(f"警告: 无效的分块 ID 格式 '{chunk_id}'，已跳过。")
+            print(f"Предупреждение: неверный формат ID чанка '{chunk_id}', пропущено.")
 
     if not actual_chunk_ids:
         return
@@ -517,17 +517,17 @@ async def stream_chunks(
             )
 
         if not chunk_url:
-            print(f"警告: 无法为分块 {actual_chunk_id} 获取下载链接，已跳过。")
+            print(f"Предупреждение: не удалось получить ссылку скачивания для чанка {actual_chunk_id}, пропущено.")
             continue
 
         try:
             async with client.stream('GET', chunk_url) as chunk_resp:
                 if chunk_resp.status_code != 200:
-                    print(f"错误: 获取分块 {chunk_id} 失败，状态码: {chunk_resp.status_code}")
+                    print(f"Ошибка: не удалось загрузить чанк {chunk_id}, код ответа: {chunk_resp.status_code}")
                     await asyncio.sleep(1)
                     chunk_url = await telegram_service.get_download_url(actual_chunk_id)
                     if not chunk_url:
-                        print(f"重试失败: 无法为分块 {chunk_id} 获取新的下载链接。")
+                        print(f"Повторная попытка не удалась: не удалось получить новую ссылку для чанка {chunk_id}.")
                         break
 
                     async with client.stream('GET', chunk_url) as retry_resp:
@@ -538,5 +538,5 @@ async def stream_chunks(
                     async for chunk_data in chunk_resp.aiter_bytes():
                         yield chunk_data
         except httpx.RequestError as exc:
-            print(f"流式传输分块 {chunk_id} 时出现网络错误: {exc}")
+            print(f"Сетевая ошибка при потоковой передаче чанка {chunk_id}: {exc}")
             break

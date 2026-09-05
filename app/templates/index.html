@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}主页 - tgState V2{% endblock %}
+{% block title %}Главная - tgState V2{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="upload-container">
         <div class="upload-area-compact" id="upload-area">
             <i class="fas fa-cloud-upload-alt upload-icon"></i>
-            <p>Drag & Drop files or <span>Browse</span></p>
+            <p>Перетащите файлы сюда или <span>Выберите</span></p>
             <input type="file" id="file-input" hidden multiple>
         </div>
         <div class="progress-area" id="progress-area"></div>
@@ -15,18 +15,18 @@
     </div>
 
     <div class="batch-actions-container">
-        <button id="batch-delete-btn" class="batch-action-btn delete" disabled><i class="fas fa-trash-alt"></i> 批量删除</button>
-        <button id="copy-links-btn" class="batch-action-btn copy" disabled><i class="fas fa-copy"></i> 复制链接</button>
+        <button id="batch-delete-btn" class="batch-action-btn delete" disabled><i class="fas fa-trash-alt"></i> Удалить выбранное</button>
+        <button id="copy-links-btn" class="batch-action-btn copy" disabled><i class="fas fa-copy"></i> Копировать ссылки</button>
         <span id="selection-counter" class="selection-counter"></span>
     </div>
 
     <div class="file-list-container-disk">
         <div class="file-list-header">
-            <div class="file-header-checkbox"><input type="checkbox" id="select-all-checkbox" title="Select all files"></div>
-            <div class="file-header-name">Name</div>
-            <div class="file-header-size">Size</div>
-            <div class="file-header-date">Upload Date</div>
-            <div class="file-header-actions">Actions</div>
+            <div class="file-header-checkbox"><input type="checkbox" id="select-all-checkbox" title="Выбрать все файлы"></div>
+            <div class="file-header-name">Имя файла</div>
+            <div class="file-header-size">Размер</div>
+            <div class="file-header-date">Дата загрузки</div>
+            <div class="file-header-actions">Действия</div>
         </div>
         <div class="file-list-disk" id="file-list-disk">
             {% if files %}
@@ -39,28 +39,28 @@
                         <i class="fas fa-file-alt file-icon"></i>
                         <span class="file-name" title="{{ file.filename }}">{{ file.filename }}</span>
                     </div>
-                    <div class="file-size">{{ "%.2f" | format(file.filesize / (1024 * 1024)) }} MB</div>
+                    <div class="file-size">{{ "%.2f" | format(file.filesize / (1024 * 1024)) }} МБ</div>
                     <div class="file-date">{{ file.upload_date.split(' ')[0] }}</div>
                     <div class="file-actions-disk">
-                        <a href="{{ file.path }}" class="action-btn download-btn" title="Download"><i class="fas fa-download"></i></a>
-                        <button class="action-btn copy-link-btn" title="Copy Link" onclick="copyLink('{{ file.path }}')"><i class="fas fa-link"></i></button>
-                        <button class="action-btn delete-btn" title="Delete" onclick="deleteFile('{{ file.file_id }}')"><i class="fas fa-trash-alt"></i></button>
+                        <a href="{{ file.path }}" class="action-btn download-btn" title="Скачать"><i class="fas fa-download"></i></a>
+                        <button class="action-btn copy-link-btn" title="Скопировать ссылку" onclick="copyLink('{{ file.path }}')"><i class="fas fa-link"></i></button>
+                        <button class="action-btn delete-btn" title="Удалить" onclick="deleteFile('{{ file.file_id }}')"><i class="fas fa-trash-alt"></i></button>
                     </div>
                 </div>
                 {% endfor %}
             {% else %}
                 <div class="empty-list">
                     <i class="fas fa-folder-open"></i>
-                    <p>No files here. Try uploading something!</p>
+                    <p>Здесь пока нет файлов. Загрузите что-нибудь!</p>
                 </div>
             {% endif %}
         </div>
     </div>
     {% if total_pages > 1 %}
-    <nav class="pagination" aria-label="文件列表分页">
-        <a class="pagination-link{% if page <= 1 %} disabled{% endif %}" href="?page={{ page - 1 }}" aria-disabled="{{ 'true' if page <= 1 else 'false' }}">上一页</a>
-        <span>第 {{ page }} / {{ total_pages }} 页</span>
-        <a class="pagination-link{% if page >= total_pages %} disabled{% endif %}" href="?page={{ page + 1 }}" aria-disabled="{{ 'true' if page >= total_pages else 'false' }}">下一页</a>
+    <nav class="pagination" aria-label="Пагинация списка файлов">
+        <a class="pagination-link{% if page <= 1 %} disabled{% endif %}" href="?page={{ page - 1 }}" aria-disabled="{{ 'true' if page <= 1 else 'false' }}">Назад</a>
+        <span>Стр. {{ page }} из {{ total_pages }}</span>
+        <a class="pagination-link{% if page >= total_pages %} disabled{% endif %}" href="?page={{ page + 1 }}" aria-disabled="{{ 'true' if page >= total_pages else 'false' }}">Вперед</a>
     </nav>
     {% endif %}
 </div>

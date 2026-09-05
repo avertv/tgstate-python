@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}图床 - tgState V2{% endblock %}
+{% block title %}Галерея - tgState V2{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h1>Image Hosting</h1>
-    <p class="subtitle">Upload your images and get shareable links.</p>
+    <h1>Загрузка изображений</h1>
+    <p class="subtitle">Загружайте изображения и получайте прямые ссылки.</p>
 
     <div class="upload-area-image" id="upload-area">
         <div class="upload-icon">
             <i class="fas fa-cloud-upload-alt"></i>
         </div>
-        <p>Drag & Drop your images here or</p>
-        <button class="browse-btn" id="browse-btn">Browse Files</button>
+        <p>Перетащите изображения сюда или</p>
+        <button class="browse-btn" id="browse-btn">Выбрать файлы</button>
         <input type="file" id="file-input" hidden multiple accept="image/*">
     </div>
 
@@ -21,17 +21,17 @@
 
     <div class="file-list-container-disk">
         <h2 class="gallery-title">
-            <i class="fas fa-images"></i> My Gallery
+            <i class="fas fa-images"></i> Моя галерея
         </h2>
 
         <div class="controls-container">
             <div class="batch-actions-container">
-                <button id="batch-delete-btn" class="batch-action-btn delete" disabled><i class="fas fa-trash-alt"></i> Batch Delete</button>
-                <button id="copy-links-btn" class="batch-action-btn copy" disabled><i class="fas fa-copy"></i> Copy Links</button>
+                <button id="batch-delete-btn" class="batch-action-btn delete" disabled><i class="fas fa-trash-alt"></i> Удалить выбранное</button>
+                <button id="copy-links-btn" class="batch-action-btn copy" disabled><i class="fas fa-copy"></i> Копировать ссылки</button>
                 <span id="selection-counter" class="selection-counter"></span>
             </div>
             <div class="link-format-selector">
-                <span class="format-label">Link Format:</span>
+                <span class="format-label">Формат ссылок:</span>
                 <div class="format-options">
                     <button class="format-option active" data-format="url">URL</button>
                     <button class="format-option" data-format="markdown">Markdown</button>
@@ -42,11 +42,11 @@
         </div>
 
         <div class="image-list-header">
-            <div class="file-header-checkbox"><input type="checkbox" id="select-all-checkbox" title="Select All"></div>
-            <div class="file-header-name">File</div>
-            <div class="file-header-size">Size</div>
-            <div class="file-header-date">Upload Date</div>
-            <div class="file-header-actions">Actions</div>
+            <div class="file-header-checkbox"><input type="checkbox" id="select-all-checkbox" title="Выбрать все"></div>
+            <div class="file-header-name">Файл</div>
+            <div class="file-header-size">Размер</div>
+            <div class="file-header-date">Дата загрузки</div>
+            <div class="file-header-actions">Действия</div>
         </div>
         <div class="image-list-body" id="image-list-body">
             {% if images %}
@@ -59,16 +59,16 @@
                         <img src="{{ image.path }}" alt="{{ image.filename }}" class="list-thumbnail" loading="lazy" onclick="showImageModal('{{ image.path }}', '{{ image.filename }}')">
                         <span class="file-name" title="{{ image.filename }}">{{ image.filename }}</span>
                     </div>
-                    <div class="file-info-size">{{ "%.2f KB"|format(image.filesize / 1024) }}</div>
+                    <div class="file-info-size">{{ "%.2f КБ"|format(image.filesize / 1024) }}</div>
                     <div class="file-info-date">{{ image.upload_date.split(' ')[0] }}</div>
                     <div class="file-info-actions">
-                        <button class="action-btn copy-btn" title="Copy URL" data-url="{{ image.url }}">
+                        <button class="action-btn copy-btn" title="Скопировать URL" data-url="{{ image.url }}">
                             <i class="fas fa-copy"></i>
                         </button>
-                        <a href="{{ image.path }}" class="action-btn download-btn" title="Download" download>
+                        <a href="{{ image.path }}" class="action-btn download-btn" title="Скачать" download>
                             <i class="fas fa-download"></i>
                         </a>
-                        <button class="action-btn delete-btn" title="Delete" onclick="deleteFile('{{ image.file_id }}')">
+                        <button class="action-btn delete-btn" title="Удалить" onclick="deleteFile('{{ image.file_id }}')">
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </div>
@@ -77,15 +77,15 @@
             {% else %}
                 <div class="empty-list">
                     <i class="fas fa-image"></i>
-                    <p>Your gallery is empty. Upload some images to get started!</p>
+                    <p>Галерея пуста. Загрузите первые изображения!</p>
                 </div>
             {% endif %}
         </div>
         {% if total_pages > 1 %}
-        <nav class="pagination" aria-label="图片列表分页">
-            <a class="pagination-link{% if page <= 1 %} disabled{% endif %}" href="?page={{ page - 1 }}" aria-disabled="{{ 'true' if page <= 1 else 'false' }}">上一页</a>
-            <span>第 {{ page }} / {{ total_pages }} 页</span>
-            <a class="pagination-link{% if page >= total_pages %} disabled{% endif %}" href="?page={{ page + 1 }}" aria-disabled="{{ 'true' if page >= total_pages else 'false' }}">下一页</a>
+        <nav class="pagination" aria-label="Пагинация галереи">
+            <a class="pagination-link{% if page <= 1 %} disabled{% endif %}" href="?page={{ page - 1 }}" aria-disabled="{{ 'true' if page <= 1 else 'false' }}">Назад</a>
+            <span>Стр. {{ page }} из {{ total_pages }}</span>
+            <a class="pagination-link{% if page >= total_pages %} disabled{% endif %}" href="?page={{ page + 1 }}" aria-disabled="{{ 'true' if page >= total_pages else 'false' }}">Вперед</a>
         </nav>
         {% endif %}
     </div>

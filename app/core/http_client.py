@@ -18,15 +18,15 @@ async def lifespan(app: FastAPI):
     启动时初始化数据库、HTTP 客户端、Bot 与删除同步服务；
     关闭时按相反顺序释放资源。
     """
-    print("🚀 应用启动...")
+    print("🚀 Запуск приложения...")
 
     database.init_db()
-    print("✔️ 数据库已初始化。")
+    print("✔️ База данных инициализирована.")
 
     global http_client
     limits = httpx.Limits(max_connections=50, max_keepalive_connections=20)
     http_client = httpx.AsyncClient(timeout=300.0, limits=limits)
-    print("✔️ 共享的 HTTP 客户端已创建。")
+    print("✔️ Общий HTTP-клиент создан.")
 
     bot_app = None
     bot_initialized = False
@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
         bot_initialized = True
         await bot_app.start()
         await bot_app.updater.start_polling(drop_pending_updates=True)
-        print("✔️ 机器人已在后台启动。")
+        print("✔️ Бот запущен в фоновом режиме.")
     except Exception as exc:
         print(f"❌ 启动机器人失败，Web 服务将继续运行: {exc}")
         app.state.bot_app = None
@@ -52,26 +52,26 @@ async def lifespan(app: FastAPI):
     try:
         await telegram_sync_service.start()
     except Exception as exc:
-        print(f"❌ 启动 Telegram 删除同步服务失败: {exc}")
+        print(f"❌ Ошибка запуска службы синхронизации удалений Telegram: {exc}")
 
     yield
 
-    print("🔌 应用关闭...")
+    print("🔌 Завершение работы приложения...")
 
     if getattr(app.state, "telegram_sync_service", None):
         await app.state.telegram_sync_service.stop()
-        print("✔️ Telegram 删除同步服务已停止。")
+        print("✔️ Служба синхронизации удалений Telegram остановлена.")
 
     if http_client:
         await http_client.aclose()
-        print("✔️ 共享的 HTTP 客户端已关闭。")
+        print("✔️ Общий HTTP-клиент закрыт.")
 
     if hasattr(app.state, "bot_app") and app.state.bot_app:
-        print("正在停止机器人...")
+        print("Остановка бота...")
         await app.state.bot_app.updater.stop()
         await app.state.bot_app.stop()
         await app.state.bot_app.shutdown()
-        print("✔️ 机器人已停止。")
+        print("✔️ Бот остановлен.")
 
 
 def get_http_client() -> httpx.AsyncClient:

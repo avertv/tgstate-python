@@ -1,39 +1,39 @@
 {% extends "base.html" %}
 
-{% block title %}设置 - tgState{% endblock %}
+{% block title %}Настройки - tgState{% endblock %}
 
 {% block content %}
 <div class="container settings-page-container">
-    <h1><i class="fas fa-cogs"></i> 应用设置</h1>
-    <p class="subtitle">管理您的 tgState 应用配置</p>
+    <h1><i class="fas fa-cogs"></i> Настройки приложения</h1>
+    <p class="subtitle">Управление конфигурацией tgState</p>
 
     <div class="settings-card">
-        <h2><i class="fas fa-key"></i> 设置访问密码</h2>
-        <p>在这里设置一个新的全局访问密码。</p>
+        <h2><i class="fas fa-key"></i> Настройка пароля доступа</h2>
+        <p>Установите новый глобальный пароль доступа.</p>
         {% if not password_configured %}
-        <p class="message error">当前未设置网页密码。请先通过环境变量 PASS_WORD 或 API 密钥完成首次设置。</p>
+        <p class="message error">В данный момент пароль не установлен. Настройте его через переменную PASS_WORD или API-ключ.</p>
         {% elif api_key_configured %}
-        <p>可以填写当前网页密码；通过 API 调用时也可以使用 x-api-key 请求头。</p>
+        <p>Вы можете указать текущий пароль или передавать заголовок x-api-key при вызовах API.</p>
         {% endif %}
         <form id="password-form" class="settings-form">
             {% if password_configured %}
             <div class="form-group">
-                <label for="current-password">当前密码</label>
+                <label for="current-password">Текущий пароль</label>
                 <div class="input-wrapper">
                     <i class="fas fa-lock"></i>
-                    <input type="password" id="current-password" name="current-password" placeholder="输入当前密码" required>
+                    <input type="password" id="current-password" name="current-password" placeholder="Введите текущий пароль" required>
                 </div>
             </div>
             {% endif %}
             <div class="form-group">
-                <label for="password">新密码</label>
+                <label for="password">Новый пароль</label>
                 <div class="input-wrapper">
                     <i class="fas fa-lock"></i>
-                    <input type="password" id="password" name="password" placeholder="输入新密码" required>
+                    <input type="password" id="password" name="password" placeholder="Введите новый пароль" required>
                 </div>
             </div>
             <button type="submit" class="btn-submit"{% if not password_configured %} disabled{% endif %}>
-                <i class="fas fa-save"></i> 保存密码
+                <i class="fas fa-save"></i> Сохранить пароль
             </button>
         </form>
         <p id="message" class="message"></p>
@@ -42,7 +42,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // 激活导航栏的当前页面链接
     document.getElementById('nav-settings')?.classList.add('active');
 
     const passwordForm = document.getElementById('password-form');
@@ -72,14 +71,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
             
             if (response.ok) {
-                messageEl.textContent = '✓ 密码已成功更新！';
+                messageEl.textContent = '✓ Пароль успешно обновлен!';
                 messageEl.className = 'message success';
             } else {
-                messageEl.textContent = '✗ 错误: ' + (result.detail || '未知错误');
+                messageEl.textContent = '✗ Ошибка: ' + (result.detail || 'Неизвестная ошибка');
                 messageEl.className = 'message error';
             }
         } catch (error) {
-            messageEl.textContent = '✗ 请求失败: ' + error.message;
+            messageEl.textContent = '✗ Ошибка запроса: ' + error.message;
             messageEl.className = 'message error';
         }
     });

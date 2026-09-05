@@ -1,22 +1,26 @@
+import os
 import sqlite3
 import threading
+from datetime import datetime, timezone
 from typing import Any
 
-DATABASE_URL = "file_metadata.db"
+# Определение пути к базе данных
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATABASE_URL = os.path.join(BASE_DIR, "file_metadata.db")
 
-# 使用线程锁来确保多线程环境下的数据库访问安全
+# Использование блокировки потоков для обеспечения безопасности доступа к БД в многопоточной среде
 _db_lock = threading.Lock()
 
 
 def get_db_connection():
-    """获取数据库连接。"""
+    """Получает соединение с базой данных SQLite."""
     conn = sqlite3.connect(DATABASE_URL, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
 
 def init_db():
-    """初始化数据库，创建表。"""
+    """Инициализирует базу данных и создаёт необходимые таблицы и индексы."""
     with _db_lock:
         conn = get_db_connection()
         try:
@@ -50,30 +54,51 @@ def add_file_metadata(
     upload_date: str | None = None,
 ) -> bool:
     """
-    向数据库中添加一个新的文件元数据记录。
-    返回值表示本次调用是否真正插入了新记录。
+    Добавляет метаданные файла в БД с автоматическим обновлением при совпадении имени.
+    Возвращает True, если была создана новая запись или обновлена существующая.
     """
+    if not upload_date:
+        upload_date = datetime.now(timezone.utc).isoformat()
+
     with _db_lock:
         conn = get_db_connection()
         try:
             cursor = conn.cursor()
-            if upload_date is None:
-                cursor.execute(
-                    "INSERT OR IGNORE INTO files (filename, file_id, filesize) VALUES (?, ?, ?)",
-                    (filename, file_id, filesize)
-                )
-            else:
+
+            # 1. Проверяем точное совпадение по file_id
+            cursor.execute("SELECT id FROM files WHERE file_id = ?", (file_id,))
+            if cursor.fetchone():
+                return False
+
+            # 2. Дедупликация: проверяем, существует ли файл с таким же именем
+            cursor.execute("SELECT id, file_id FROM files WHERE filename = ?", (filename,))
+            existing = cursor.fetchone()
+
+            if existing:
+                # Обновляем запись (заменяем устаревший file_id и формат даты)
                 cursor.execute(
                     """
-                    INSERT OR IGNORE INTO files (filename, file_id, filesize, upload_date)
-                    VALUES (?, ?, ?, ?)
+                    UPDATE files 
+                    SET file_id = ?, filesize = ?, upload_date = ? 
+                    WHERE id = ?
                     """,
-                    (filename, file_id, filesize, upload_date)
+                    (file_id, filesize, upload_date, existing["id"])
                 )
+                conn.commit()
+                print(f"Метаданные файла обновлены (устранён дубликат): {filename}")
+                return True
+
+            # 3. Вставляем новую запись
+            cursor.execute(
+                """
+                INSERT INTO files (filename, file_id, filesize, upload_date)
+                VALUES (?, ?, ?, ?)
+                """,
+                (filename, file_id, filesize, upload_date)
+            )
             conn.commit()
-            inserted = cursor.rowcount > 0
-            print(f"已添加或忽略文件元数据: {filename}")
-            return inserted
+            print(f"Метаданные файла добавлены: {filename}")
+            return True
         finally:
             conn.close()
 
@@ -84,7 +109,7 @@ def get_files_page(
     *,
     images_only: bool = False,
 ) -> list[dict[str, Any]]:
-    """按上传时间倒序读取一页文件。"""
+    """Возвращает постраничный список файлов, отсортированный по дате загрузки в обратном порядке."""
     where_clause = ""
     parameters: list[Any] = []
     if images_only:
@@ -116,7 +141,7 @@ def get_files_page(
 
 
 def count_files(*, images_only: bool = False) -> int:
-    """返回文件总数，图床页面可只统计图片。"""
+    """Возвращает общее количество файлов в БД. Для страницы галереи может фильтровать только изображения."""
     where_clause = ""
     parameters: tuple[str, ...] = ()
     if images_only:
@@ -138,7 +163,7 @@ def count_files(*, images_only: bool = False) -> int:
 
 
 def get_all_files() -> list[dict[str, Any]]:
-    """从数据库中获取所有文件的元数据。"""
+    """Получает метаданные всех файлов из базы данных."""
     with _db_lock:
         conn = get_db_connection()
         try:
@@ -152,7 +177,7 @@ def get_all_files() -> list[dict[str, Any]]:
 
 
 def get_file_info(file_id: str) -> dict[str, Any] | None:
-    """通过 file_id 获取单个文件的完整元数据。"""
+    """Возвращает полные метаданные одного файла по его file_id."""
     with _db_lock:
         conn = get_db_connection()
         try:
@@ -168,7 +193,7 @@ def get_file_info(file_id: str) -> dict[str, Any] | None:
 
 
 def get_file_by_id(file_id: str) -> dict[str, Any] | None:
-    """兼容旧调用，返回文件名和大小。"""
+    """Функция обратной совместимости, возвращает словарь с именем и размером файла."""
     result = get_file_info(file_id)
     if not result:
         return None
@@ -180,8 +205,8 @@ def get_file_by_id(file_id: str) -> dict[str, Any] | None:
 
 def delete_file_metadata(file_id: str) -> bool:
     """
-    根据 file_id 从数据库中删除文件元数据。
-    返回: 如果成功删除了一行，则为 True，否则为 False。
+    Удаляет метаданные файла из базы данных по его file_id.
+    Возвращает True, если строка была успешно удалена, иначе False.
     """
     with _db_lock:
         conn = get_db_connection()
@@ -196,8 +221,8 @@ def delete_file_metadata(file_id: str) -> bool:
 
 def delete_file_by_message_id(message_id: int) -> str | None:
     """
-    根据 message_id 从数据库中删除文件元数据，并返回其 file_id。
-    因为一个主消息 ID 只对应一个文件，所以可以直接删除。
+    Удаляет метаданные файла из базы данных по message_id и возвращает его file_id.
+    Так как одно главное сообщение соответствует одному файлу, удаление происходит напрямую.
     """
     file_id_to_delete = None
     with _db_lock:
@@ -214,7 +239,7 @@ def delete_file_by_message_id(message_id: int) -> str | None:
                 cursor.execute("DELETE FROM files WHERE file_id = ?", (file_id_to_delete,))
                 conn.commit()
                 print(
-                    f"已从数据库中删除与消息 ID {message_id} 关联的文件: {file_id_to_delete}"
+                    f"Удалена из базы данных запись для сообщения ID {message_id} , файл: {file_id_to_delete}"
                 )
             return file_id_to_delete
         finally:

@@ -41,6 +41,10 @@ ENV/
 *.sqlite3
 file_metadata.db
 
+# Telegram session files
+*.session
+*.session-journal
+
 # IDE / Editor specific
 .vscode/
 .idea/
