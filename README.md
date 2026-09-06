@@ -22,8 +22,8 @@
 * **Поддержка больших файлов**: Автоматическая обработка загрузки больших файлов частями (чанками).
 * **Защита паролем**: Опциональный механизм защиты паролем для обеспечения безопасности вашего веб-интерфейса.
 
-<img src="https://tgstate.justhil.uk/d/410:BQACAgEAAyEGAASW4jjnAAIBmmh3ku0_aJ2x-lqrh7jWkRDzLSIQAAKbBAACKlfBRwdEPuNk9gfKNgQ/%E4%B8%BB%E9%A1%B5.png" style="zoom:50%;" />
-<img src="https://tgstate.justhil.uk/d/409:BQACAgEAAyEGAASW4jjnAAIBmWh3kuxPT5LfidK42mn0i8iRhTDiAAKaBAACKlfBR2NtAAFcUYplmDYE/%E5%9B%BE%E5%BA%8A.png" style="zoom:50%;" />
+<img src="[https://tgstate.justhil.uk/d/410:BQACAgEAAyEGAASW4jjnAAIBmmh3ku0_aJ2x-lqrh7jWkRDzLSIQAAKbBAACKlfBRwdEPuNk9gfKNgQ/%E4%B8%BB%E9%A1%B5.png](https://tgstate.justhil.uk/d/410:BQACAgEAAyEGAASW4jjnAAIBmmh3ku0_aJ2x-lqrh7jWkRDzLSIQAAKbBAACKlfBRwdEPuNk9gfKNgQ/%E4%B8%BB%E9%A1%B5.png)" style="zoom:50%;" />
+<img src="[https://tgstate.justhil.uk/d/409:BQACAgEAAyEGAASW4jjnAAIBmWh3kuxPT5LfidK42mn0i8iRhTDiAAKaBAACKlfBR2NtAAFcUYplmDYE/%E5%9B%BE%E5%BA%8A.png](https://tgstate.justhil.uk/d/409:BQACAgEAAyEGAASW4jjnAAIBmWh3kuxPT5LfidK42mn0i8iRhTDiAAKaBAACKlfBR2NtAAFcUYplmDYE/%E5%9B%BE%E5%BA%8A.png)" style="zoom:50%;" />
 
 ## Быстрый старт
 
@@ -38,7 +38,7 @@ docker run -d \
   -e BOT_TOKEN="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" \
   -e CHANNEL_NAME="@my_test_channel" \
   -e PASS_WORD="supersecret" \
-  -e BASE_URL="[https://my-service.com](https://my-service.com)" \
+  -e BASE_URL="https://my-service.com" \
   -e PICGO_API_KEY="supersecret(опционально, удалите эту строку если не нужно)" \
   -e TG_API_ID="123456" \
   -e TG_API_HASH="your_telegram_api_hash" \
@@ -55,7 +55,7 @@ docker run -d \
 1. **Клонируйте проект и перейдите в директорию**:
 
    ```bash
-   git clone [https://github.com/your-repo/python-tgstate.git](https://github.com/your-repo/python-tgstate.git)
+   git clone https://github.com/your-repo/python-tgstate.git
    cd python-tgstate
    ```
 
@@ -84,7 +84,7 @@ docker run -d \
    uvicorn app.main:app --reload
    ```
 
-   Если домен не настроен, приложение будет работать по адресу `http://127.0.0.1:8000`.
+   Если домен не настроен, приложение будет работать по адресу `[http://127.0.0.1:8000](http://127.0.0.1:8000)`.
 
 ## Конфигурация (Переменные окружения)
 
@@ -95,7 +95,7 @@ docker run -d \
 | `BOT_TOKEN` | Ваш токен Telegram Bot API. Можно получить у [@BotFather](https://t.me/BotFather). | **Да** | `None` |
 | `CHANNEL_NAME` | Целевой чат/канал для хранения файлов. Может быть `@username` публичного канала. | **Да** | `None` |
 | `PASS_WORD` | Пароль для защиты доступа к веб-интерфейсу. Если оставить пустым, доступ к приложению будет открытым, без пароля. | Нет | `None` |
-| `BASE_URL` | Публичный URL вашего сервиса. Используется для генерации полных ссылок на скачивание. | Нет | `http://127.0.0.1:8000` |
+| `BASE_URL` | Публичный URL вашего сервиса. Используется для генерации полных ссылок на скачивание. | Нет | `[http://127.0.0.1:8000](http://127.0.0.1:8000)` |
 | `PICGO_API_KEY` | API-ключ для интерфейса загрузки PicGo. | Нет | `None` |
 | `TG_API_ID` | Telegram MTProto `api_id`, используется для создания MTProto-клиента. | Нет | `None` |
 | `TG_API_HASH` | Telegram MTProto `api_hash`, используется для создания MTProto-клиента. | Нет | `None` |
@@ -122,6 +122,38 @@ TELEGRAM_RECONCILE_INTERVAL=60
 - `TELEGRAM_SYNC_SESSION_STRING`: Строка сессии пользователя, используется **только при запуске** для сканирования исторических файлов.
 - `TELEGRAM_RECONCILE_INTERVAL`: Базовый период сверки удалений. Когда количество файлов превышает 1 000 строк, выполняется не чаще одного раза в 5 минут; когда превышает 10 000 строк — не чаще одного раза в 15 минут для снижения количества запросов к Telegram и нагрузки на сервер.
 
+### Как получить `TELEGRAM_SYNC_SESSION_STRING` (на Linux)
+
+Для получения строки сессии пользователя используется скрипт на базе библиотеки Telethon:
+
+1. **Установите библиотеку Telethon**:
+   ```bash
+   pip install telethon
+   ```
+
+2. **Создайте файл `get_session.py`**:
+   ```python
+   from telethon.sync import TelegramClient
+   from telethon.sessions import StringSession
+
+   api_id = input("Введите API ID: ")
+   api_hash = input("Введите API Hash: ")
+
+   with TelegramClient(StringSession(), int(api_id), api_hash) as client:
+       print("\nВаш TELEGRAM_SYNC_SESSION_STRING:\n")
+       print(client.session.save())
+   ```
+
+3. **Получите API credentials**:
+   - Перейдите на [my.telegram.org](https://my.telegram.org) и авторизуйтесь.
+   - Откройте раздел **API development tools**, создайте приложение и скопируйте `api_id` и `api_hash`.
+
+4. **Запустите скрипт**:
+   ```bash
+   python3 get_session.py
+   ```
+   Введите `api_id`, `api_hash`, номер телефона и код из Telegram. Скрипт выведет готовую строку сессии для переменной `TELEGRAM_SYNC_SESSION_STRING`.
+
 ## Важно относительно паролей
 
 1. **Оба пароля 【НЕ】 установлены**:
@@ -134,7 +166,7 @@ TELEGRAM_RECONCILE_INTERVAL=60
 
 ## Инструкция по использованию
 
-1. **Перейдите в веб-интерфейс**: После запуска приложения откройте в браузере `http://127.0.0.1:8000` (или настроенный вами `BASE_URL`).
+1. **Перейдите в веб-интерфейс**: После запуска приложения откройте в браузере `[http://127.0.0.1:8000](http://127.0.0.1:8000)` (или настроенный вами `BASE_URL`).
 
 2. **Проверка пароля**: Если вы установили `PASS_WORD` в файле `.env`, приложение сначала перенаправит вас на страницу ввода пароля. После ввода правильного пароля вы сможете получить доступ к главному интерфейсу.
 
@@ -146,7 +178,7 @@ TELEGRAM_RECONCILE_INTERVAL=60
 
 6. **Получение ссылки в группе**: Ответьте словом `get` на сообщение с файлом в группе, чтобы получить ссылку на скачивание.
 
-   <img src="https://tgstate.justhil.uk/d/408:BQACAgEAAyEGAASW4jjnAAIBmGh3kuqRumdoYCUgg1KdxhmnU_3xAAKZBAACKlfBR9JpqfvggtR8NgQ/%E7%BE%A4%E7%BB%84%E5%9B%9E%E5%A4%8D.png" style="zoom:50%;" />
+   <img src="[https://tgstate.justhil.uk/d/408:BQACAgEAAyEGAASW4jjnAAIBmGh3kuqRumdoYCUgg1KdxhmnU_3xAAKZBAACKlfBR9JpqfvggtR8NgQ/%E7%BE%A4%E7%BB%84%E5%9B%9E%E5%A4%8D.png](https://tgstate.justhil.uk/d/408:BQACAgEAAyEGAASW4jjnAAIBmGh3kuqRumdoYCUgg1KdxhmnU_3xAAKZBAACKlfBR9JpqfvggtR8NgQ/%E7%BE%A4%E7%BB%84%E5%9B%9E%E5%A4%8D.png)" style="zoom:50%;" />
 
 ## Руководство по настройке PicGo
 
@@ -168,7 +200,7 @@ TELEGRAM_RECONCILE_INTERVAL=60
 
 6. **Пользовательское тело (Custom Body)**: `{"key":"PICGO_API_KEY"}` (опционально, рекомендуется) (один из двух способов проверки).
 
-   <img src="https://tgstate.justhil.uk/d/407:BQACAgEAAyEGAASW4jjnAAIBl2h3kujY6McRWgIztAAB2mabiph9YgACmAQAAipXwUcH3E_AI0NrhDYE/picgo.png" style="zoom:80%;" />
+   <img src="[https://tgstate.justhil.uk/d/407:BQACAgEAAyEGAASW4jjnAAIBl2h3kujY6McRWgIztAAB2mabiph9YgACmAQAAipXwUcH3E_AI0NrhDYE/picgo.png](https://tgstate.justhil.uk/d/407:BQACAgEAAyEGAASW4jjnAAIBl2h3kujY6McRWgIztAAB2mabiph9YgACmAQAAipXwUcH3E_AI0NrhDYE/picgo.png)" style="zoom:80%;" />
 
 ### Интерфейс удаления PicList
 
@@ -239,4 +271,4 @@ async function main(ctx, extra) {
 - Удаление через веб-страницу и PicList по-прежнему может нормально синхронизироваться с Telegram.
 - Ручное удаление сообщений в группе Telegram не будет в реальном времени обратной записью удалять файлы из списка веб-интерфейса.
 
-Сделано с помощью roocode и душевного энтузиазма.****
+Сделано с помощью roocode и душевного энтузиазма.
