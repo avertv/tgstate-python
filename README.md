@@ -67,7 +67,7 @@ docker run -d \
    # Активация виртуального окружения (Windows)
    venv\Scripts\activate
    # Активация виртуального окружения (Linux/macOS)
-   # source venv/bin/activate
+   source venv/bin/activate
    ```
 
 3. **Установите зависимости**:
